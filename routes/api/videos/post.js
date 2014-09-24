@@ -31,45 +31,48 @@ var post = function(req, res) {
         //'-filter_complex', '[0:0] [0:1] [1:0] [1:1] concat=n=1:v=2:a=1 [v] [a]' // add intro
         '-filter_complex', 'overlay'
     ];
+    try {
+        avconv = spawn('ffmpeg', args); // If no avconc, use ffmpeg instead
+        output = fs.createWriteStream(filePath);
 
-    avconv = spawn('ffmpeg', args); // If no avconc, use ffmpeg instead
-    output = fs.createWriteStream(filePath);
+        form.on('part', function(part) {
+            if (part.filename) {
+                part.pipe(avconv.stdin);
 
-    form.on('part', function(part) {
-        if (part.filename) {
-            part.pipe(avconv.stdin);
-            
-            part.on('end', function() {
-                console.log('===== Video has been uploaded! =====');
-            });
-        }
-    });
-
-    avconv.stdout.pipe(output);
-
-    avconv.on('exit', function() {
-        console.log('===== Conversion done! =====');
-    });
-
-    avconv.stderr.on('data', function(data) {
-        console.log('avconv: ' + data);
-    });
-    
-    output.on('finish', function() {
-        console.log('===== File has been written to file system =====');
-
-        vimeo.upload(filePath, function(err, msg) {
-            console.log(err);
-            console.log(msg);
+                part.on('end', function() {
+                    console.log('===== Video has been uploaded! =====');
+                });
+            }
         });
-        
-    });
 
-    form.parse(req, function(err, fields) {
-        if (err)
-            return console.log(err);
+        avconv.stdout.pipe(output);
 
-    });
+        avconv.on('exit', function() {
+            console.log('===== Conversion done! =====');
+        });
+
+        avconv.stderr.on('data', function(data) {
+            console.log('avconv: ' + data);
+        });
+
+        output.on('finish', function() {
+            console.log('===== File has been written to file system =====');
+
+            vimeo.upload(filePath, function(err, msg) {
+                console.log(err);
+                console.log(msg);
+            });
+
+        });
+
+        form.parse(req, function(err, fields) {
+            if (err)
+                return console.log(err);
+
+        });
+    } catch(e) {
+         console.log(e);
+    }
 };
 
 module.exports = post;
