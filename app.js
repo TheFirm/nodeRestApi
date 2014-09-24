@@ -10,7 +10,6 @@ var app = express(),
 io.set('transports', ['xhr-polling']);
 app.set('env', process.env.NODE_ENV || 'development');
 app.set('port', process.env.PORT || 8080);
-//app.set('view engine', 'jade');
 app.use(express.logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded());
@@ -28,14 +27,17 @@ app.all('/*', function(req, res, next) {
 
 /* API endpoints */
 app.get('/api/videos', routes.api.videos.get);
-app.post('/api/videos', routes.api.videos.post);
+app.post('/api/videos', function(req, res) {
+    routes.api.videos.post(req, res, function(err, msg) {
+        if (err) io.sockets.send('videoHandler', {error:err});
+        
+        io.sockets.emit('videoHandler', msg);
+    });
+});
 
 /* WebSockets API */
 io.sockets.on('connection', function(socket) {
     console.log("user connected");
-    socket.on('startUpload', function(data) {
-        console.log('Upload Start');
-    });
 });
 
 /* Start Express server */

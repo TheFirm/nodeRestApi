@@ -9,27 +9,24 @@ var upload = function(filePath, callback) {
     if (!filePath) return callback({error: 'Not found File'}, null);
     
     try {
-        console.log('===== START VIMEO UPLOAD =====');
-        
-        callback(null, {message:"Start Upload"});
+        callback(null, "START VIMEO UPLOAD");
 
         var lib = new vimeo(vimeoKey, vimeoId);
         // this FUCKING ROW GET 2 hour MY FUCKING LIFE
         lib.access_token = vimeoToken;
 
         lib.streamingUpload(filePath, function(error, body, status_code, headers) {
-            
             if (error) return callback({error: error}, null);
-console.log('steep 3');
+
             lib.request(headers.location, function(error, body, status_code, headers) {
-                if (error) return callback({error: error}, null);
+                if (error) return callback(error, null);
                 
-                callback(null, body);
+                callback(null, {body:body});
             });
         });
+        
     } catch (e) {
-        console.log(e);
-        callback({error: e}, null);
+        return callback(e, null);
     }
 };
 

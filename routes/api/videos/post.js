@@ -1,6 +1,5 @@
 /* POST /api/videos */
 
-
 var rootPath = process.cwd(),
         vimeo = require(rootPath + '/routes/api/videos/vimeo'),
         multiparty = require('multiparty'),
@@ -9,13 +8,12 @@ var rootPath = process.cwd(),
         ffmpg = require('fluent-ffmpeg'),
         spawn = require('child_process').spawn;
 
-//set resource 
+// set resource 
 var waterMark = rootPath + '/public/resource/wm.png';
 var _introAvi = rootPath + '/public/resource/_intro.avi';
 
-var post = function(req, res) {
+var post = function(req, res, callback) {
 
-    
     try {
         
         var form = new multiparty.Form(),
@@ -25,7 +23,8 @@ var post = function(req, res) {
         fileName.update(Date() + Math.random().toString(36));
         url = '/files/' + fileName.digest('hex') + '.webm';
         filePath = rootPath + '/public' + url;
-
+        
+        // set params ffmpeg
         args = [
             '-i','pipe:0', '-f', 'webm', //set Video
             'pipe:1', //set Audio
@@ -35,6 +34,9 @@ var post = function(req, res) {
             '-filter_complex', 'overlay'
         ];
         
+        callback(null, {message:"start stream process"});
+        
+        // start writeStream
         avconv = spawn('ffmpeg', args); // If no avconc, use ffmpeg instead
         output = fs.createWriteStream(filePath);
 
@@ -43,7 +45,7 @@ var post = function(req, res) {
                 part.pipe(avconv.stdin);
 
                 part.on('end', function() {
-                    console.log('===== Video has been uploaded! =====');
+                    callback(null, {message:"Video has been uploaded!"});
                 });
             }
         });
@@ -51,30 +53,28 @@ var post = function(req, res) {
         avconv.stdout.pipe(output);
 
         avconv.on('exit', function() {
-            console.log('===== Conversion done! =====');
+            callback(null, {message:"Conversion done!"});
         });
 
         avconv.stderr.on('data', function(data) {
-            console.log('avconv: ' + data);
+            console.log("ffmpeg:: " + data);
         });
 
         output.on('finish', function() {
-            console.log('===== File has been written to file system =====');
 
             vimeo.upload(filePath, function(err, msg) {
-                console.log(err);
-                console.log(msg);
+                if (err) return callback({error:err},null);
+                
+                callback(null, msg);
             });
-
         });
 
         form.parse(req, function(err, fields) {
-            if (err)
-                return console.log(err);
-
+            if (err) return callback({error:err},null);
         });
+        
     } catch(e) {
-         console.log(e);
+        return callback({error:e},null);
     }
 };
 
