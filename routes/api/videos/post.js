@@ -1,7 +1,7 @@
 /* POST /api/videos */
 
-var _introAvi = '/home/dmitrii/Videos/_intro.avi';
-var waterMark = '/home/dmitrii/Pictures/wm.png';
+var waterMark = require(rootPath + '/public/resource/wm.png');
+var _introAvi = require(rootPath + '/public/resource/_intro.avi');
 
 var rootPath = process.cwd(),
         vimeo = require(rootPath + '/routes/api/videos/vimeo'),
