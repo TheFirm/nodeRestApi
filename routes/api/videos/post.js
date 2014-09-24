@@ -10,8 +10,8 @@ var rootPath = process.cwd(),
         spawn = require('child_process').spawn;
 
 //set resource 
-var waterMark = require(rootPath + '/public/resource/wm.png');
-var _introAvi = require(rootPath + '/public/resource/_intro.avi');
+var waterMark = rootPath + '/public/resource/wm.png';
+var _introAvi = rootPath + '/public/resource/_intro.avi';
 
 var post = function(req, res) {
 
