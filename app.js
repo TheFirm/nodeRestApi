@@ -7,7 +7,7 @@ var app = express(),
         server = require('http').createServer(app),
         io = require('socket.io').listen(server);
 
-app.set('transports', ['xhr-polling']);
+io.set('transports', ['xhr-polling']);
 app.set('env', process.env.NODE_ENV || 'development');
 app.set('port', process.env.PORT || 8080);
 //app.set('view engine', 'jade');
