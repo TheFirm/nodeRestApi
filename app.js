@@ -32,7 +32,7 @@ app.post('/api/videos', routes.api.videos.post);
 
 /* WebSockets API */
 io.sockets.on('connection', function(socket) {
-
+    console.log("user connected");
     socket.on('startUpload', function(data) {
         console.log('Upload Start');
     });
