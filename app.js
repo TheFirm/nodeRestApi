@@ -9,7 +9,7 @@ var app = express(),
         io = require('socket.io').listen(server);
 
 app.set('env', process.env.NODE_ENV || 'development');
-app.set('port', process.env.PORT || 3000);
+app.set('port', process.env.PORT || 88);
 //app.set('view engine', 'jade');
 app.use(express.logger('dev'));
 app.use(express.json());
