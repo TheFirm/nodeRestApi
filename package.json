@@ -1,0 +1,24 @@
+{
+  "name": "HandlerVideo",
+  "version": "0.0.0",
+  "description": "video handler ffmpeg",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/TheFirm/nodeRestApi.git"
+  },
+  "author" : "dmitrii petrenko",
+  "email" : "55dmitrii@gmail.com",
+  "license": "MIT",
+  "dependencies": {
+    "express": "~3.4.8",
+    "node-uuid": "~1.4.1",
+    "multiparty": "~3.2.2",
+    "socket.io": "~0.9.16",
+    "vimeo-api" : "1.1.0",
+    "fluent-ffmpeg" : "2.0.0-rc2"
+  }
+}
