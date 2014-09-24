@@ -15,23 +15,26 @@ var _introAvi = rootPath + '/public/resource/_intro.avi';
 
 var post = function(req, res) {
 
-    var form = new multiparty.Form(),
+    
+    try {
+        
+        var form = new multiparty.Form(),
             fileName = crypto.createHash('sha1'),
             avconv, args, output, filePath, url;
 
-    fileName.update(Date() + Math.random().toString(36));
-    url = '/files/' + fileName.digest('hex') + '.webm';
-    filePath = rootPath + '/public' + url;
-    
-    args = [
-        '-i','pipe:0', '-f', 'webm', //set Video
-        'pipe:1', //set Audio
-       // '-i', _introAvi,
-        '-i', waterMark,  // add watermark
-        //'-filter_complex', '[0:0] [0:1] [1:0] [1:1] concat=n=1:v=2:a=1 [v] [a]' // add intro
-        '-filter_complex', 'overlay'
-    ];
-    try {
+        fileName.update(Date() + Math.random().toString(36));
+        url = '/files/' + fileName.digest('hex') + '.webm';
+        filePath = rootPath + '/public' + url;
+
+        args = [
+            '-i','pipe:0', '-f', 'webm', //set Video
+            'pipe:1', //set Audio
+           // '-i', _introAvi,
+            '-i', waterMark,  // add watermark
+            //'-filter_complex', '[0:0] [0:1] [1:0] [1:1] concat=n=1:v=2:a=1 [v] [a]' // add intro
+            '-filter_complex', 'overlay'
+        ];
+        
         avconv = spawn('ffmpeg', args); // If no avconc, use ffmpeg instead
         output = fs.createWriteStream(filePath);
 
