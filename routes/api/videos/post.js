@@ -1,7 +1,5 @@
 /* POST /api/videos */
 
-var waterMark = require(rootPath + '/public/resource/wm.png');
-var _introAvi = require(rootPath + '/public/resource/_intro.avi');
 
 var rootPath = process.cwd(),
         vimeo = require(rootPath + '/routes/api/videos/vimeo'),
@@ -10,6 +8,10 @@ var rootPath = process.cwd(),
         fs = require('fs'),
         ffmpg = require('fluent-ffmpeg'),
         spawn = require('child_process').spawn;
+
+//set resource 
+var waterMark = require(rootPath + '/public/resource/wm.png');
+var _introAvi = require(rootPath + '/public/resource/_intro.avi');
 
 var post = function(req, res) {
 
