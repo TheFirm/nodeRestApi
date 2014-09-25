@@ -15,6 +15,12 @@ var _introAvi = rootPath + '/public/resource/_intro.avi';
 var post = function(req, res, callback) {
 
     try {
+        
+        ffmpeg.ffprobe(rootPath + '/public' + "/files/_intro.avi", function(err, metadata) {
+            console.log(metadata);
+            console.log(err);
+        });
+        
         /*var filePath = rootPath + '/public' + "/files/_intro.avi";
         
         
@@ -47,7 +53,7 @@ var post = function(req, res, callback) {
         // start writeStream
         avconv = spawn('ffmpeg', args); // If no avconc, use ffmpeg instead
         output = fs.createWriteStream(filePath);
-
+        
         form.on('part', function(part) {
             if (part.filename) {
                 part.pipe(avconv.stdin);
