@@ -64,7 +64,12 @@ var post = function(req, res, callback) {
         avconv.on('exit', function() {
             callback(null, {message:"Conversion done!"});
         });
-
+        avconv.stdout.on('error', function( err ) {
+            console.log(err);
+            if (err.code == "EPIPE") {
+                avconv.exit(0);
+            }
+        });
         avconv.stderr.on('data', function(data) {
             console.log("ffmpeg:: " + data);
         });
