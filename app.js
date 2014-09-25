@@ -9,7 +9,7 @@ var app = express(),
 
 io.set('transports', ['xhr-polling']);
 app.set('env', process.env.NODE_ENV || 'development');
-app.set('port', process.env.PORT || 8080);
+app.set('port', process.env.PORT || 3001);
 app.use(express.logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded());
