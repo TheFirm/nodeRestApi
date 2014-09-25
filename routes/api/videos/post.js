@@ -16,10 +16,11 @@ var post = function(req, res, callback) {
 
     try {
         
-        ffmpeg.ffprobe(rootPath + '/public' + "/files/_intro.avi", function(err, metadata) {
+        ffmpeg.ffprobe(_introAvi, function(err, metadata) {
             console.log(metadata);
             console.log(err);
         });
+        return;
         
         /*var filePath = rootPath + '/public' + "/files/_intro.avi";
         
