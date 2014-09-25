@@ -5,7 +5,7 @@ var rootPath = process.cwd(),
         multiparty = require('multiparty'),
         crypto = require('crypto'),
         fs = require('fs'),
-        ffmpg = require('fluent-ffmpeg'),
+        ffmpeg = require('fluent-ffmpeg'),
         spawn = require('child_process').spawn;
 
 // set resource 
@@ -15,7 +15,15 @@ var _introAvi = rootPath + '/public/resource/_intro.avi';
 var post = function(req, res, callback) {
 
     try {
+        /*var filePath = rootPath + '/public' + "/files/_intro.avi";
         
+        
+        vimeo.upload(filePath, function(err, msg) {
+                if (err) return callback({error:err},null);
+                
+                callback(null, msg);
+            });
+        return;*/
         var form = new multiparty.Form(),
             fileName = crypto.createHash('sha1'),
             avconv, args, output, filePath, url;
@@ -34,7 +42,7 @@ var post = function(req, res, callback) {
             '-filter_complex', 'overlay'
         ];
         
-        callback(null, {message:"start stream process"});
+        //callback(null, {message:"start stream process"});
         
         // start writeStream
         avconv = spawn('ffmpeg', args); // If no avconc, use ffmpeg instead
@@ -45,7 +53,8 @@ var post = function(req, res, callback) {
                 part.pipe(avconv.stdin);
 
                 part.on('end', function() {
-                    callback(null, {message:"Video has been uploaded!"});
+                    
+                    //set event end
                 });
             }
         });
@@ -61,7 +70,6 @@ var post = function(req, res, callback) {
         });
 
         output.on('finish', function() {
-
             vimeo.upload(filePath, function(err, msg) {
                 if (err) return callback({error:err},null);
                 
