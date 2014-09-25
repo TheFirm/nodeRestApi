@@ -15,22 +15,6 @@ var _introAvi = rootPath + '/public/resource/_intro.avi';
 var post = function(req, res, callback) {
 
     try {
-        
-        ffmpeg.ffprobe(_introAvi, function(err, metadata) {
-            console.log(metadata);
-            console.log(err);
-        });
-        return;
-        
-        /*var filePath = rootPath + '/public' + "/files/_intro.avi";
-        
-        
-        vimeo.upload(filePath, function(err, msg) {
-                if (err) return callback({error:err},null);
-                
-                callback(null, msg);
-            });
-        return;*/
         var form = new multiparty.Form(),
             fileName = crypto.createHash('sha1'),
             avconv, args, output, filePath, url;
@@ -49,18 +33,21 @@ var post = function(req, res, callback) {
             '-filter_complex', 'overlay'
         ];
         
-        //callback(null, {message:"start stream process"});
-        
         // start writeStream
         avconv = spawn('ffmpeg', args); // If no avconc, use ffmpeg instead
         output = fs.createWriteStream(filePath);
-        
+            
         form.on('part', function(part) {
             if (part.filename) {
                 part.pipe(avconv.stdin);
 
                 part.on('end', function() {
                     
+                    //set event end
+                });
+                part.on('error', function(err) {
+                    console.log("part.on:: " +err);
+                     console.log(err);
                     //set event end
                 });
             }
@@ -71,14 +58,21 @@ var post = function(req, res, callback) {
         avconv.on('exit', function() {
             callback(null, {message:"Conversion done!"});
         });
+        avconv.on('error', function(err) {
+           console.log("avconv.on.errr:: " +err);
+                    //set event end
+        });
         avconv.stdout.on('error', function( err ) {
-            console.log(err);
+            console.log("avconv.stdout.errr:: " +err);
             if (err.code == "EPIPE") {
                 avconv.exit(0);
             }
         });
         avconv.stderr.on('data', function(data) {
             console.log("ffmpeg:: " + data);
+        });
+        avconv.stderr.on('error', function(err) {
+            console.log("avconv.stderr.errr:: " + err);
         });
 
         output.on('finish', function() {
