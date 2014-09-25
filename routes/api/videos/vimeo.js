@@ -32,7 +32,7 @@ var upload = function(filePath, callback) {
 
             lib.request(headers.location, function(error, body, status_code, headers) {
                 if (error) return callback(error, null);
-                console.log(status_code);
+
                 body['custom_duration'] = duration;
                 return callback(null, {vimeo:body});
             });

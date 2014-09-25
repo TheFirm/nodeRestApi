@@ -19,11 +19,14 @@ app.use(app.router);
 app.use(logErrors);
 app.use(clientErrorHandler);
 app.use(errorHandler);
+app.use(express.static(path.join(__dirname, 'public')));
+
 
 function logErrors(err, req, res, next) {
   console.error(err.stack);
   next(err);
 }
+
 function clientErrorHandler(err, req, res, next) {
   if (req.xhr) {
     res.status(500).send({ error: 'Something blew up!' });
@@ -31,12 +34,11 @@ function clientErrorHandler(err, req, res, next) {
     next(err);
   }
 }
+
 function errorHandler(err, req, res, next) {
   res.status(500);
   res.render('error', { error: err });
 }
-
-app.use(express.static(path.join(__dirname, 'public')));
 
 app.all('/*', function(req, res, next) {
     res.header("Access-Control-Allow-Origin", "*");
@@ -58,6 +60,16 @@ app.post('/api/videos', function(req, res) {
 /* WebSockets API */
 io.sockets.on('connection', function(socket) {
     console.log("user connected");
+});
+
+/* uncaughtException */
+process.on('uncaughtException', function(err) {
+    if(err.errno === 'EADDRINUSE')
+         console.log('EADDRINUSE');
+    else
+         console.log(err);
+     
+    process.exit(1);
 });
 
 /* Start Express server */

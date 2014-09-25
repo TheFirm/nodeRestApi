@@ -13,19 +13,20 @@ var waterMark = rootPath + '/public/resource/wm.png';
 var _introAvi = rootPath + '/public/resource/_intro.avi';
 
 var post = function(req, res, callback) {
-
-    try {
-        var form = new multiparty.Form(),
+    
+    var form = new multiparty.Form(),
             fileName = crypto.createHash('sha1'),
             avconv, args, output, filePath, url;
+    
+    try {
 
         fileName.update(Date() + Math.random().toString(36));
-        url = '/files/' + fileName.digest('hex') + '.webm';
+        url = '/files/' + fileName.digest('hex') + '.avi';
         filePath = rootPath + '/public' + url;
         
         // set params ffmpeg
         args = [
-            '-i','pipe:0', '-f', 'webm', //set Video
+            '-i','pipe:0', '-f', 'avi', //set Video
             'pipe:1', //set Audio
            // '-i', _introAvi,
             '-i', waterMark,  // add watermark
@@ -42,14 +43,9 @@ var post = function(req, res, callback) {
                 part.pipe(avconv.stdin);
 
                 part.on('end', function() {
-                    
-                    //set event end
+
                 });
-                part.on('error', function(err) {
-                    console.log("part.on:: " +err);
-                     console.log(err);
-                    //set event end
-                });
+               
             }
         });
 
@@ -58,22 +54,23 @@ var post = function(req, res, callback) {
         avconv.on('exit', function() {
             callback(null, {message:"Conversion done!"});
         });
+        
         avconv.on('error', function(err) {
            console.log("avconv.on.errr:: " +err);
                     //set event end
         });
+        
         avconv.stdout.on('error', function( err ) {
             console.log("avconv.stdout.errr:: " +err);
             if (err.code == "EPIPE") {
                 avconv.exit(0);
             }
         });
+        
         avconv.stderr.on('data', function(data) {
             console.log("ffmpeg:: " + data);
         });
-        avconv.stderr.on('error', function(err) {
-            console.log("avconv.stderr.errr:: " + err);
-        });
+        
 
         output.on('finish', function() {
             vimeo.upload(filePath, function(err, msg) {
