@@ -16,13 +16,15 @@ var post = function(req, res, callback) {
     
     var form = new multiparty.Form(),
             fileName = crypto.createHash('sha1'),
-            avconv, args, output, filePath, url;
+            avconv, args, output, filePath, url, _filename;
     
     try {
 
         fileName.update(Date() + Math.random().toString(36));
-        url = '/files/' + fileName.digest('hex') + '.avi';
+        _filename = fileName.digest('hex');
+        url = '/files/' + _filename + '.avi';
         filePath = rootPath + '/public' + url;
+        
         
         // set params ffmpeg
         args = [
@@ -52,40 +54,63 @@ var post = function(req, res, callback) {
         avconv.stdout.pipe(output);
 
         avconv.on('exit', function() {
-            callback(null, {message:"Conversion done!"});
+            callback(null, {message:"Conversion done!"},null);
+        });
+        avconv.on('progress', function(progress) {
+            console.log(progress);
         });
         
         avconv.on('error', function(err) {
-           console.log("avconv.on.errr:: " +err);
-                    //set event end
-        });
-        
-        avconv.stdout.on('error', function( err ) {
-            console.log("avconv.stdout.errr:: " +err);
+            console.log("avconv.on.errr:: " +err);
             if (err.code == "EPIPE") {
                 avconv.exit(0);
             }
         });
-        
+
         avconv.stderr.on('data', function(data) {
             console.log("ffmpeg:: " + data);
         });
         
 
         output.on('finish', function() {
-            vimeo.upload(filePath, function(err, msg) {
-                if (err) return callback({error:err},null);
-                
-                callback(null, msg);
-            });
+
+            var urlWithIntro = '/files/' + _filename + 'intro.avi',
+            filePathWithIntro = rootPath + '/public' + urlWithIntro;
+            
+             var command = ffmpeg(_introAvi)
+                    .input(filePath)
+                    .on('error', function(err) {
+                        console.log('An error occurred: ' + err.message);
+                    })
+                    .on('end', function() {
+                        console.log('Processing merge finished !');
+                        vimeo.upload(filePathWithIntro, function(err, msg) {
+                            if (err) return callback({error:err},null,null);
+                            
+                            fs.unlinkSync(filePathWithIntro);
+                            fs.unlinkSync(filePath);
+                            
+                            callback(null, msg, null);
+                            return true;
+                        });
+                    })
+                    .on('progress', function(progress) {
+                        console.log('Processing: ' + progress.percent + '% done');
+                        callback(null, null, progress.percent);
+                        
+                    })
+                    .on('start', function(commandLine) {
+                        console.log('Spawned Ffmpeg with command: ' + commandLine);
+                    }).mergeToFile(filePathWithIntro);
+
         });
 
         form.parse(req, function(err, fields) {
-            if (err) return callback({error:err},null);
+            if (err) return callback({error:err},null,null);
         });
         
     } catch(e) {
-        return callback({error:e},null);
+        return callback({error:e},null,null);
     }
 };
 

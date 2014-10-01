@@ -21,7 +21,6 @@ app.use(clientErrorHandler);
 app.use(errorHandler);
 app.use(express.static(path.join(__dirname, 'public')));
 
-
 function logErrors(err, req, res, next) {
   console.error(err.stack);
   next(err);
@@ -50,16 +49,23 @@ app.all('/*', function(req, res, next) {
 /* API endpoints */
 app.get('/api/videos', routes.api.videos.get);
 app.post('/api/videos', function(req, res) {
-    routes.api.videos.post(req, res, function(err, msg) {
-        if (err) io.sockets.send('videoHandler', {error:err});
-        
-        io.sockets.emit('videoHandler', msg);
+    
+    routes.api.videos.post(req, res, function(err, msg, proccess) {
+        if (err) {io.sockets.send('videoHandler', {error:err});}
+
+        if (proccess) {
+            io.sockets.emit('videoHandlerProgress', proccess);
+        } 
+        if (msg) {
+            io.sockets.emit('videoHandler', msg);
+        }
     });
 });
 
 /* WebSockets API */
 io.sockets.on('connection', function(socket) {
     console.log("user connected");
+    
 });
 
 /* uncaughtException */
