@@ -77,7 +77,7 @@ var post = function(req, res, callback) {
             {
                 var sizes = a[1].replace(/ /g,'').split("kB");
                 var currentSize = parseInt(sizes[0]);
-                proccentReady = (currentSize*100)/fileSize;
+                proccentReady = (((currentSize*100)/fileSize)-10)/1.3;
                 
                 //console.log("currentsize:: " + currentSize);
                 console.log("filesize:: " + fileSize);
@@ -91,10 +91,13 @@ var post = function(req, res, callback) {
         });
         
         output.on('finish', function() {
-
+            console.log("Start add watermark!");
             var urlWithIntro = '/files/' + _filename + 'intro.avi',
             filePathWithIntro = rootPath + '/public' + urlWithIntro;
             
+            proccentReady = (proccentReady < 80) ? (proccentReady + 8) : proccentReady;
+            
+            callback(null, null, proccentReady, socketId);
             var process = new ffmpegn(filePath)
                 .then(function (video) {   
                     video.fnAddWatermark(waterMark, '-strict -2 '+filePathWithIntro, {

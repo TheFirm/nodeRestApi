@@ -64,7 +64,7 @@ app.put('/api/videos/:socketid', function(req, res, next) {
             res.end();
         }
         
-        routes.api.videos.post(req, res, function(err, msg, proccess, socketId) {
+        routes.api.videos.post(req, res, function(err, msg, proccess, closeConnection) {
  
             if (err) {
                 io.sockets.socket(sockeId).emit('videoHandler', {error:err});
@@ -74,11 +74,13 @@ app.put('/api/videos/:socketid', function(req, res, next) {
             
             if (proccess) {
                 io.sockets.socket(sockeId).emit('videoHandlerProgress', proccess);
-            } 
-            if (socketId) {
+            }
+            
+            if (closeConnection) {
                 res.status(200);
                 res.end();
             }
+            
             if (msg) {
                 io.sockets.socket(sockeId).emit('videoHandler', msg);
             }
