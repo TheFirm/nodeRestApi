@@ -44,7 +44,9 @@ var post = function(req, res, callback) {
         sizeIntro = (stats["size"]/1024);
         
         form.on('part', function(part) {
-            fileSize = parseInt((part.byteCount/1024) + (sizeIntro/2));
+            if(fileSize < parseInt((part.byteCount/1024) + (sizeIntro/2))) {
+                fileSize = parseInt((part.byteCount/1024) + (sizeIntro/2));
+            }
             console.log("BYTECODE:: " + fileSize);
             if (part.filename) {
                 console.log("BYTECODE:: " + parseInt((part.byteCount/1024) + (sizeIntro/2)));
