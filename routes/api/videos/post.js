@@ -39,9 +39,9 @@ var post = function(req, res, callback) {
         // start writeStream
         avconv = spawn('ffmpeg', args); // If no avconc, use ffmpeg instead
         output = fs.createWriteStream(filePath);
-        var stats = fs.statSync(_introAvi);
+        //var stats = fs.statSync(_introAvi);
 
-        sizeIntro = (stats["size"]/1024);
+        sizeIntro = 5000;
         
         form.on('part', function(part) {
             
