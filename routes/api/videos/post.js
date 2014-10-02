@@ -44,14 +44,14 @@ var post = function(req, res, callback) {
         sizeIntro = (stats["size"]/1024);
         
         form.on('part', function(part) {
-            
+            //MAGICK!!!, in one at moments fileSize set 2023 byte but file cannot have size 2023
             if(fileSize < parseInt((part.byteCount/1024) + (sizeIntro/2))) {
                 fileSize = parseInt((part.byteCount/1024) + (sizeIntro/2));
             }
             console.log("BYTECODE:: " + fileSize);
-            if (part.filename) {
-                console.log("BYTECODE:: " + parseInt((part.byteCount/1024) + (sizeIntro/2)));
-                //2000 size intro/2
+            
+            if (part.filename) 
+            {
                 part.pipe(avconv.stdin);
 
                 part.on('end', function() {
@@ -78,8 +78,9 @@ var post = function(req, res, callback) {
                     }, function (error, file) {
                         if (!error) 
                         {
-                            proccentReady = (proccentReady < 95) ? (proccentReady + 4) : proccentReady;
+                            proccentReady = (proccentReady < 95) ? (proccentReady + 5) : proccentReady;
                             callback(null, null, proccentReady, null);
+                            
                             vimeo.upload(filePathWithIntro, function(err, msg) {
                                 if (err) return callback(err,null,null,socketId);
 
@@ -90,13 +91,13 @@ var post = function(req, res, callback) {
                             });
                         } else {
                             console.log('ERROR Add Water Mark: ' + error);
-                            return callback(error,null,null,socketId);
+                            return callback(error,null,null,null);
                         }
                     }); 
                 }, 
                 function (err) {
                     console.log('Error: ' + err);
-                    return callback(err,null,null,socketId);
+                    return callback(err,null,null,null);
                 });
         });
        
@@ -116,7 +117,7 @@ var post = function(req, res, callback) {
                 console.log("filesize:: " + fileSize);
                 //console.log("procent:: " + proccentReady);
                 
-                callback(null, null, proccentReady, socketId);
+                callback(null, null, proccentReady, null);
             }
 
         });
@@ -128,11 +129,11 @@ var post = function(req, res, callback) {
         });
 
         form.parse(req, function(err, fields) {
-            if (err) return callback(err,null,null,socketId);
+            if (err) return callback(err,null,null,"true");
         });
         
     } catch(e) {
-        return callback(e,null,null,socketId);
+        return callback(e,null,null,"true");
     }
 };
 
