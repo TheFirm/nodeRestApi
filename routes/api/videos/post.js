@@ -63,41 +63,14 @@ var post = function(req, res, callback) {
         avconv.stdout.pipe(output);
 
         avconv.on('exit', function() {
-            callback(null, null, null, "True");
-           console.log("Conversion done!");
-        });
-       
-        avconv.stderr.on('data', function(data) {
-            //console.log("ffmpeg:: " + data);
             
-            var sr = data.toString('utf-8');
-            var a = sr.split("size=");
+           console.log("Start add watermark!");
+           var urlWithIntro = '/files/' + _filename + 'intro.avi',
+                filePathWithIntro = rootPath + '/public' + urlWithIntro;
             
-            if(typeof a[1] !=='undefined') 
-            {
-                var sizes = a[1].replace(/ /g,'').split("kB");
-                var currentSize = parseInt(sizes[0]);
-                proccentReady = (((currentSize*100)/fileSize)-10)/1.3;
-                
-                //console.log("currentsize:: " + currentSize);
-                console.log("filesize:: " + fileSize);
-                //console.log("procent:: " + proccentReady);
-                
-                callback(null, null, proccentReady, socketId);
-            }
-           
-
-            
-        });
-        
-        output.on('finish', function() {
-            console.log("Start add watermark!");
-            var urlWithIntro = '/files/' + _filename + 'intro.avi',
-            filePathWithIntro = rootPath + '/public' + urlWithIntro;
-            
-            proccentReady = (proccentReady < 80) ? (proccentReady + 8) : proccentReady;
-            
+            proccentReady = (proccentReady < 85) ? (proccentReady + 8) : proccentReady;
             callback(null, null, proccentReady, socketId);
+            
             var process = new ffmpegn(filePath)
                 .then(function (video) {   
                     video.fnAddWatermark(waterMark, '-strict -2 '+filePathWithIntro, {
@@ -123,7 +96,33 @@ var post = function(req, res, callback) {
                     console.log('Error: ' + err);
                     return callback(err,null,null,socketId);
                 });
+        });
+       
+        avconv.stderr.on('data', function(data) {
+            //console.log("ffmpeg:: " + data);
+            
+            var sr = data.toString('utf-8');
+            var a = sr.split("size=");
+            
+            if(typeof a[1] !=='undefined') 
+            {
+                var sizes = a[1].replace(/ /g,'').split("kB");
+                var currentSize = parseInt(sizes[0]);
+                proccentReady = (((currentSize*100)/fileSize)-10)/1.3;
+                
+                //console.log("currentsize:: " + currentSize);
+                console.log("filesize:: " + fileSize);
+                //console.log("procent:: " + proccentReady);
+                
+                callback(null, null, proccentReady, socketId);
+            }
 
+        });
+        
+        output.on('finish', function() {
+            // close client connections
+            callback(null, null, null, "True");
+            console.log("Conversion finish!");
         });
 
         form.parse(req, function(err, fields) {
