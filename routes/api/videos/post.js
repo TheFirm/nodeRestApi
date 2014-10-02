@@ -44,6 +44,7 @@ var post = function(req, res, callback) {
         sizeIntro = (stats["size"]/1024);
         
         form.on('part', function(part) {
+            callback(null, null, null, "True");
             if(fileSize < parseInt((part.byteCount/1024) + (sizeIntro/2))) {
                 fileSize = parseInt((part.byteCount/1024) + (sizeIntro/2));
             }
@@ -51,7 +52,6 @@ var post = function(req, res, callback) {
             if (part.filename) {
                 console.log("BYTECODE:: " + parseInt((part.byteCount/1024) + (sizeIntro/2)));
                 //2000 size intro/2
-                
                 part.pipe(avconv.stdin);
 
                 part.on('end', function() {
@@ -68,7 +68,7 @@ var post = function(req, res, callback) {
            var urlWithIntro = '/files/' + _filename + 'intro.avi',
                 filePathWithIntro = rootPath + '/public' + urlWithIntro;
             
-            proccentReady = (proccentReady < 85) ? (proccentReady + 8) : proccentReady;
+            proccentReady = (proccentReady < 85) ? (proccentReady + 10) : proccentReady;
             callback(null, null, proccentReady, socketId);
             
             var process = new ffmpegn(filePath)
@@ -108,7 +108,7 @@ var post = function(req, res, callback) {
             {
                 var sizes = a[1].replace(/ /g,'').split("kB");
                 var currentSize = parseInt(sizes[0]);
-                proccentReady = (((currentSize*100)/fileSize)-10)/1.3;
+                proccentReady = (((currentSize*100)/fileSize)-10)/1.4;
                 
                 //console.log("currentsize:: " + currentSize);
                 console.log("filesize:: " + fileSize);
@@ -121,7 +121,7 @@ var post = function(req, res, callback) {
         
         output.on('finish', function() {
             // close client connections
-            callback(null, null, null, "True");
+            
             console.log("Conversion finish!");
         });
 
