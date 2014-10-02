@@ -32,16 +32,16 @@ var post = function(req, res, callback) {
             '-i','pipe:0', '-f', 'avi', //set Video
             'pipe:1', //set Audio
             '-i', _introAvi,
-            '-filter_complex', 'concat=n=2:v=1:a=1'
-            //'-strict', '-2'
+            '-y','-filter_complex', 'concat=n=2:v=1:a=1',
+            '-strict', '-2'
         ];
         
         // start writeStream
         avconv = spawn('ffmpeg', args); // If no avconc, use ffmpeg instead
         output = fs.createWriteStream(filePath);
-        //var stats = fs.statSync(_introAvi);
+        var stats = fs.statSync(_introAvi);
 
-        sizeIntro = 5000;
+        sizeIntro = (stats["size"]/1024);
         
         form.on('part', function(part) {
             
@@ -65,7 +65,7 @@ var post = function(req, res, callback) {
         avconv.stderr.on('data', function(data) {
             console.log("ffmpeg:: " + data);
             
-           /* var sr = data.toString('utf-8');
+            var sr = data.toString('utf-8');
             var a = sr.split("size=");
             
             if(typeof a[1] !=='undefined') 
@@ -79,11 +79,12 @@ var post = function(req, res, callback) {
                 console.log("procent:: " + proccentReady);
                 
                 callback(null, null, proccentReady, socketId);
-            }*/
+            }
+           
+
+            
         });
-        output.on('error', function(error){
-            console.log("ffmpeg error:: " + error);
-        });
+        
         output.on('finish', function() {
 
             var urlWithIntro = '/files/' + _filename + 'intro.avi',
