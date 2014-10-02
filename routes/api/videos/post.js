@@ -40,12 +40,13 @@ var post = function(req, res, callback) {
         avconv = spawn('ffmpeg', args); // If no avconc, use ffmpeg instead
         output = fs.createWriteStream(filePath);
         var stats = fs.statSync(_introAvi);
-
+        
         sizeIntro = (stats["size"]/1024);
         
         form.on('part', function(part) {
             
             if (part.filename) {
+                console.log("BYTECODE:: " + part.byteCount);
                 //2000 size intro/2
                 //fileSize = parseInt((part.byteCount/1024) + (sizeIntro/2));
                 part.pipe(avconv.stdin);
