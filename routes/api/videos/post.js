@@ -65,7 +65,7 @@ var post = function(req, res, callback) {
         });
        
         avconv.stderr.on('data', function(data) {
-            console.log("ffmpeg:: " + data);
+            //console.log("ffmpeg:: " + data);
             
             var sr = data.toString('utf-8');
             var a = sr.split("size=");
@@ -76,9 +76,9 @@ var post = function(req, res, callback) {
                 var currentSize = parseInt(sizes[0]);
                 proccentReady = (currentSize*100)/fileSize;
                 
-                console.log("currentsize:: " + currentSize);
+                //console.log("currentsize:: " + currentSize);
                 console.log("filesize:: " + fileSize);
-                console.log("procent:: " + proccentReady);
+                //console.log("procent:: " + proccentReady);
                 
                 callback(null, null, proccentReady, socketId);
             }
