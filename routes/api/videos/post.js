@@ -63,6 +63,7 @@ var post = function(req, res, callback) {
         avconv.stdout.pipe(output);
 
         avconv.on('exit', function() {
+            callback(null, null, null, "True");
            console.log("Conversion done!");
         });
        

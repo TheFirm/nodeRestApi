@@ -75,13 +75,16 @@ app.put('/api/videos/:socketid', function(req, res, next) {
             if (proccess) {
                 io.sockets.socket(sockeId).emit('videoHandlerProgress', proccess);
             } 
+            if (socketId) {
+                res.status(200);
+                res.end();
+            }
             if (msg) {
                 io.sockets.socket(sockeId).emit('videoHandler', msg);
             }
         });
         
-        res.status(200);
-        res.end();
+        
 });
 
 /* WebSockets API */
