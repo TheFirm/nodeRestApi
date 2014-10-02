@@ -19,6 +19,7 @@
     "multiparty": "~3.2.2",
     "socket.io": "~0.9.16",
     "vimeo-api" : "1.1.0",
-    "fluent-ffmpeg" : "2.0.0-rc2"
+    "fluent-ffmpeg" : "2.0.0-rc2",
+    "ffmpeg" : "0.0.4"
   }
 }

@@ -7,6 +7,7 @@ var rootPath = process.cwd(),
         fs = require('fs'),
         ffmpeg = require('fluent-ffmpeg'),
         spawn = require('child_process').spawn;
+var ffmpegn = require('ffmpeg');
 
 // set resource 
 var waterMark = rootPath + '/public/resource/wm.png';
@@ -16,7 +17,7 @@ var post = function(req, res, callback) {
     
     var form = new multiparty.Form(),
             fileName = crypto.createHash('sha1'),
-            avconv, args, output, filePath, url, _filename;
+            avconv, args, output, filePath, url, _filename, socketId, fileSize = 0, proccentReady =0, sizeIntro = 2000;
     
     try {
 
@@ -30,87 +31,99 @@ var post = function(req, res, callback) {
         args = [
             '-i','pipe:0', '-f', 'avi', //set Video
             'pipe:1', //set Audio
-           // '-i', _introAvi,
-            '-i', waterMark,  // add watermark
-            //'-filter_complex', '[0:0] [0:1] [1:0] [1:1] concat=n=1:v=2:a=1 [v] [a]' // add intro
-            '-filter_complex', 'overlay'
+            '-i', _introAvi,
+            '-y','-filter_complex', 'concat=n=2:v=1:a=1',
+            '-strict', '-2'
         ];
         
         // start writeStream
         avconv = spawn('ffmpeg', args); // If no avconc, use ffmpeg instead
         output = fs.createWriteStream(filePath);
-            
+        var stats = fs.statSync(_introAvi);
+
+        sizeIntro = (stats["size"]/1024);
+        
         form.on('part', function(part) {
+            
             if (part.filename) {
+                //2000 size intro/2
+                fileSize = parseInt((part.byteCount/1024) + (sizeIntro/2));
                 part.pipe(avconv.stdin);
 
                 part.on('end', function() {
 
                 });
-               
             }
         });
 
         avconv.stdout.pipe(output);
 
         avconv.on('exit', function() {
-            callback(null, {message:"Conversion done!"},null);
+           console.log("Conversion done!");
         });
-        avconv.on('progress', function(progress) {
-            console.log(progress);
-        });
-        
-        avconv.on('error', function(err) {
-            console.log("avconv.on.errr:: " +err);
-            if (err.code == "EPIPE") {
-                avconv.exit(0);
-            }
-        });
-
+       
         avconv.stderr.on('data', function(data) {
             console.log("ffmpeg:: " + data);
+            
+            var sr = data.toString('utf-8');
+            var a = sr.split("size=");
+            
+            if(typeof a[1] !=='undefined') 
+            {
+                var sizes = a[1].replace(/ /g,'').split("kB");
+                var currentSize = parseInt(sizes[0]);
+                proccentReady = (currentSize*100)/fileSize;
+                
+                console.log("currentsize:: " + currentSize);
+                console.log("filesize:: " + fileSize);
+                console.log("procent:: " + proccentReady);
+                
+                callback(null, null, proccentReady, socketId);
+            }
+           
+
+            
         });
         
-
         output.on('finish', function() {
 
             var urlWithIntro = '/files/' + _filename + 'intro.avi',
             filePathWithIntro = rootPath + '/public' + urlWithIntro;
             
-             var command = ffmpeg(_introAvi)
-                    .input(filePath)
-                    .on('error', function(err) {
-                        console.log('An error occurred: ' + err.message);
-                    })
-                    .on('end', function() {
-                        console.log('Processing merge finished !');
-                        vimeo.upload(filePathWithIntro, function(err, msg) {
-                            if (err) return callback({error:err},null,null);
-                            
-                            fs.unlinkSync(filePathWithIntro);
-                            fs.unlinkSync(filePath);
-                            
-                            callback(null, msg, null);
-                            return true;
-                        });
-                    })
-                    .on('progress', function(progress) {
-                        console.log('Processing: ' + progress.percent + '% done');
-                        callback(null, null, progress.percent);
-                        
-                    })
-                    .on('start', function(commandLine) {
-                        console.log('Spawned Ffmpeg with command: ' + commandLine);
-                    }).mergeToFile(filePathWithIntro);
+            var process = new ffmpegn(filePath)
+                .then(function (video) {   
+                    video.fnAddWatermark(waterMark, '-strict -2 '+filePathWithIntro, {
+                        position : 'SE'
+                    }, function (error, file) {
+                        if (!error) 
+                        {
+                            vimeo.upload(filePathWithIntro, function(err, msg) {
+                                if (err) return callback(err,null,null,socketId);
+
+                                fs.unlinkSync(filePathWithIntro);
+                                fs.unlinkSync(filePath);
+
+                                callback(null, msg, null,socketId);
+                            });
+                        } else {
+                            console.log('ERROR Add Water Mark: ' + error);
+                            return callback(error,null,null,socketId);
+                        }
+                    }); 
+                }, 
+                function (err) {
+                    console.log('Error: ' + err);
+                    return callback(err,null,null,socketId);
+                });
 
         });
 
         form.parse(req, function(err, fields) {
-            if (err) return callback({error:err},null,null);
+            if (err) return callback(err,null,null,socketId);
         });
         
     } catch(e) {
-        return callback({error:e},null,null);
+        return callback(e,null,null,socketId);
     }
 };
 

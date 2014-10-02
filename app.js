@@ -1,7 +1,8 @@
 var express = require('express'),
         path = require('path'),
+        fs = require('fs'),
         routes = require('./routes');
-
+var util = require('util');
 /* Setup Express application */
 var app = express(),
         server = require('http').createServer(app),
@@ -20,6 +21,10 @@ app.use(logErrors);
 app.use(clientErrorHandler);
 app.use(errorHandler);
 app.use(express.static(path.join(__dirname, 'public')));
+
+app.use(function ( req, res, next ) {
+    next('it blew');
+});
 
 function logErrors(err, req, res, next) {
   console.error(err.stack);
@@ -42,40 +47,58 @@ function errorHandler(err, req, res, next) {
 app.all('/*', function(req, res, next) {
     res.header("Access-Control-Allow-Origin", "*");
     res.header("Access-Control-Allow-Headers", "X-Requested-With");
-    res.header('Access-Control-Allow-Methods', 'OPTIONS, POST, GET');
+    res.header('Access-Control-Allow-Methods', 'OPTIONS, POST, GET, PUT');
     next();
 });
 
+app.get('/', function ( req, res ) {
+    res.send(500, 'sorry');
+});
 /* API endpoints */
-app.get('/api/videos', routes.api.videos.get);
-app.post('/api/videos', function(req, res) {
-    
-    routes.api.videos.post(req, res, function(err, msg, proccess) {
-        if (err) {io.sockets.send('videoHandler', {error:err});}
-
-        if (proccess) {
-            io.sockets.emit('videoHandlerProgress', proccess);
-        } 
-        if (msg) {
-            io.sockets.emit('videoHandler', msg);
+app.put('/api/videos/:socketid', function(req, res, next) {
+        var sockeId = req.params.socketid;
+        
+        if (typeof sockeId === 'undefined')
+        {
+            res.status(500);
+            res.end();
         }
-    });
+        
+        routes.api.videos.post(req, res, function(err, msg, proccess, socketId) {
+ 
+            if (err) {
+                io.sockets.socket(sockeId).emit('videoHandler', {error:err});
+                res.status(500);
+                res.end();
+            }
+            
+            if (proccess) {
+                io.sockets.socket(sockeId).emit('videoHandlerProgress', proccess);
+            } 
+            if (msg) {
+                io.sockets.socket(sockeId).emit('videoHandler', msg);
+            }
+        });
+        
+        res.status(200);
+        res.end();
 });
 
 /* WebSockets API */
 io.sockets.on('connection', function(socket) {
-    console.log("user connected");
-    
+   socket.emit("setID",socket.id);
+}).on('reconnect', function(socket) {
+   socket.emit("setID",socket.id);
 });
 
 /* uncaughtException */
-process.on('uncaughtException', function(err) {
+server.on('uncaughtException', function(err) {
     if(err.errno === 'EADDRINUSE')
          console.log('EADDRINUSE');
     else
          console.log(err);
      
-    process.exit(1);
+    server.exit(1);
 });
 
 /* Start Express server */
