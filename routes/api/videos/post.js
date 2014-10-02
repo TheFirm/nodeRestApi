@@ -44,11 +44,11 @@ var post = function(req, res, callback) {
         sizeIntro = (stats["size"]/1024);
         
         form.on('part', function(part) {
-            
+            fileSize = parseInt((part.byteCount/1024) + (sizeIntro/2));
             if (part.filename) {
                 console.log("BYTECODE:: " + parseInt((part.byteCount/1024) + (sizeIntro/2)));
                 //2000 size intro/2
-                var fileSize = parseInt((part.byteCount/1024) + (sizeIntro/2));
+                
                 part.pipe(avconv.stdin);
 
                 part.on('end', function() {
