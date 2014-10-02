@@ -32,8 +32,8 @@ var post = function(req, res, callback) {
             '-i','pipe:0', '-f', 'avi', //set Video
             'pipe:1', //set Audio
             '-i', _introAvi,
-            '-y','-filter_complex', 'concat=n=2:v=1:a=1',
-            '-strict', '-2'
+            '-filter_complex', 'concat=n=2:v=1:a=1'
+            //'-strict', '-2'
         ];
         
         // start writeStream
@@ -80,11 +80,10 @@ var post = function(req, res, callback) {
                 
                 callback(null, null, proccentReady, socketId);
             }
-           
-
-            
         });
-        
+        output.on('error', function(error){
+            console.log("ffmpeg error:: " + error);
+        });
         output.on('finish', function() {
 
             var urlWithIntro = '/files/' + _filename + 'intro.avi',
