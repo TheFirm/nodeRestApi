@@ -80,8 +80,8 @@ app.put('/api/videos/:socketid', function(req, res, next) {
             }
         });
         
-        /*res.status(200);
-        res.end();*/
+        res.status(200);
+        res.end();
 });
 
 /* WebSockets API */
