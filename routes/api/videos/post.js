@@ -65,7 +65,7 @@ var post = function(req, res, callback) {
         avconv.stderr.on('data', function(data) {
             console.log("ffmpeg:: " + data);
             
-            var sr = data.toString('utf-8');
+           /* var sr = data.toString('utf-8');
             var a = sr.split("size=");
             
             if(typeof a[1] !=='undefined') 
@@ -79,7 +79,7 @@ var post = function(req, res, callback) {
                 console.log("procent:: " + proccentReady);
                 
                 callback(null, null, proccentReady, socketId);
-            }
+            }*/
         });
         output.on('error', function(error){
             console.log("ffmpeg error:: " + error);
