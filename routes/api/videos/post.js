@@ -47,7 +47,7 @@ var post = function(req, res, callback) {
             
             if (part.filename) {
                 //2000 size intro/2
-                fileSize = parseInt((part.byteCount/1024) + (sizeIntro/2));
+                //fileSize = parseInt((part.byteCount/1024) + (sizeIntro/2));
                 part.pipe(avconv.stdin);
 
                 part.on('end', function() {
