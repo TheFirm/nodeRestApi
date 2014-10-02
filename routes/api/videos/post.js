@@ -69,7 +69,7 @@ var post = function(req, res, callback) {
                 filePathWithIntro = rootPath + '/public' + urlWithIntro;
             
             proccentReady = (proccentReady < 85) ? (proccentReady + 10) : proccentReady;
-            callback(null, null, proccentReady, socketId);
+            callback(null, null, proccentReady, null);
             
             var process = new ffmpegn(filePath)
                 .then(function (video) {   
@@ -78,6 +78,8 @@ var post = function(req, res, callback) {
                     }, function (error, file) {
                         if (!error) 
                         {
+                            proccentReady = (proccentReady < 95) ? (proccentReady + 4) : proccentReady;
+                            callback(null, null, proccentReady, null);
                             vimeo.upload(filePathWithIntro, function(err, msg) {
                                 if (err) return callback(err,null,null,socketId);
 
