@@ -55,17 +55,18 @@ app.get('/', function ( req, res ) {
     res.send(500, 'sorry');
 });
 /* API endpoints */
-app.put('/api/videos/:socketid', function(req, res, next) {
+app.put('/api/videos/:socketid/:watermark_position', function(req, res, next) {
         var sockeId = req.params.socketid;
-        
+        var watermarkPosition = req.params.watermark_position;
+
         if (typeof sockeId === 'undefined')
         {
             res.status(500);
             res.end();
         }
         
-        routes.api.videos.post(req, res, function(err, msg, proccess, closeConnection) {
- 
+        routes.api.videos.post(req, res, watermarkPosition, function(err, msg, proccess, closeConnection) {
+
             if (err) {
                 io.sockets.socket(sockeId).emit('videoHandler', {error:err});
                 res.status(500);
@@ -75,7 +76,7 @@ app.put('/api/videos/:socketid', function(req, res, next) {
             if (proccess) {
                 io.sockets.socket(sockeId).emit('videoHandlerProgress', proccess);
             }
-            
+
             if (closeConnection) {
                 res.status(200);
                 res.end();
@@ -102,7 +103,7 @@ server.on('uncaughtException', function(err) {
          console.log('EADDRINUSE');
     else
          console.log(err);
-     
+
     server.exit(1);
 });
 

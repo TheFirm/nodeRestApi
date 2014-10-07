@@ -13,48 +13,51 @@ var ffmpegn = require('ffmpeg');
 var waterMark = rootPath + '/public/resource/wm.png';
 var _introAvi = rootPath + '/public/resource/_intro.avi';
 
-var post = function(req, res, callback) {
-    
+var post = function(req, res, w_p, callback) {
+
     var form = new multiparty.Form(),
             fileName = crypto.createHash('sha1'),
-            avconv, args, output, filePath, url, _filename, socketId, fileSize = 0, proccentReady =0, sizeIntro = 2000;
-    
+            avconv, args, output, filePath, url, _filename, socketId, fileSize = 0, proccentReady =0, sizeIntro = 2000,
+        watermark_positions =new Array('SE', 'NE', 'SW', 'NW');
+
     try {
 
         fileName.update(Date() + Math.random().toString(36));
         _filename = fileName.digest('hex');
         url = '/files/' + _filename + '.avi';
         filePath = rootPath + '/public' + url;
-        
-        
+
+
         // set params ffmpeg
         args = [
             '-i','pipe:0', '-f', 'avi', //set Video
-            'pipe:1', //set Audio
+            'pipe:1 ', //set Audio
             '-i', _introAvi,
             '-y','-filter_complex', 'concat=n=2:v=1:a=1',
             '-strict', '-2'
         ];
-        
+
         // start writeStream
         avconv = spawn('ffmpeg', args); // If no avconc, use ffmpeg instead
         output = fs.createWriteStream(filePath);
+
         var stats = fs.statSync(_introAvi);
-        
+
         sizeIntro = (stats["size"]/1024);
-        
+
         form.on('part', function(part) {
             //MAGICK!!!, in one at moments fileSize set 2023 byte but file cannot have size 2023
             if(fileSize < parseInt((part.byteCount/1024) + (sizeIntro/2))) {
                 fileSize = parseInt((part.byteCount/1024) + (sizeIntro/2));
             }
             console.log("BYTECODE:: " + fileSize);
-            
-            if (part.filename) 
+
+            if (part.filename)
             {
                 part.pipe(avconv.stdin);
 
                 part.on('end', function() {
+
 
                 });
             }
@@ -63,24 +66,24 @@ var post = function(req, res, callback) {
         avconv.stdout.pipe(output);
 
         avconv.on('exit', function() {
-            
+
            console.log("Start add watermark!");
            var urlWithIntro = '/files/' + _filename + 'intro.avi',
                 filePathWithIntro = rootPath + '/public' + urlWithIntro;
-            
+
             proccentReady = (proccentReady < 80) ? (proccentReady + 10) : proccentReady;
             callback(null, null, proccentReady, null);
-            
+
             var process = new ffmpegn(filePath)
-                .then(function (video) {   
+                .then(function (video) {
                     video.fnAddWatermark(waterMark, '-strict -2 '+filePathWithIntro, {
-                        position : 'SE'
+                        position : watermark_positions[w_p]
                     }, function (error, file) {
-                        if (!error) 
+                        if (!error)
                         {
                             proccentReady = (proccentReady < 90) ? (proccentReady + 8) : proccentReady;
                             callback(null, null, proccentReady, null);
-                            
+
                             vimeo.upload(filePathWithIntro, function(err, msg) {
                                 if (err) return callback(err,null,null,socketId);
 
@@ -93,35 +96,35 @@ var post = function(req, res, callback) {
                             console.log('ERROR Add Water Mark: ' + error);
                             return callback(error,null,null,null);
                         }
-                    }); 
-                }, 
+                    });
+                },
                 function (err) {
                     console.log('Error: ' + err);
                     return callback(err,null,null,null);
                 });
         });
-       
+
         avconv.stderr.on('data', function(data) {
-            //console.log("ffmpeg:: " + data);
-            
+            console.log("ffmpeg:: " + data);
+
             var sr = data.toString('utf-8');
             var a = sr.split("size=");
-            
-            if(typeof a[1] !=='undefined') 
+
+            if(typeof a[1] !=='undefined')
             {
                 var sizes = a[1].replace(/ /g,'').split("kB");
                 var currentSize = parseInt(sizes[0]);
                 proccentReady = (((currentSize*100)/fileSize)-10)/1.4;
-                
+
                 //console.log("currentsize:: " + currentSize);
                 console.log("filesize:: " + fileSize);
                 //console.log("procent:: " + proccentReady);
-                
+
                 callback(null, null, proccentReady, null);
             }
 
         });
-        
+
         output.on('finish', function() {
             // close client connections
             callback(null, null, null, "True");
@@ -131,7 +134,7 @@ var post = function(req, res, callback) {
         form.parse(req, function(err, fields) {
             if (err) return callback(err,null,null,"true");
         });
-        
+
     } catch(e) {
         return callback(e,null,null,"true");
     }
