@@ -131,7 +131,7 @@ var post = function (req, res, w_p, callback) {
                 if (newstr){
                     console.log("Converteb bytes: "+newstr[1]);
                 }
-
+                    //to do: check percents ready
 //                proccentReady +=
 
 
