@@ -19,7 +19,7 @@ var post = function (req, res, w_p, callback) {
     var form = new multiparty.Form(),
         fileName = crypto.createHash('sha1'),
         avconv, args, output, filePath, url, _filename, socketId, fileSize = 0, proccentReady = 0, sizeIntro = 2000,
-        watermark_positions = new Array('SE', 'NE', 'SW', 'NW');
+        watermark_positions = new Array('SW', 'NW', 'SE', 'NE');
 
     try {
 
@@ -71,43 +71,54 @@ var post = function (req, res, w_p, callback) {
                 tmpFileAvi = rootPath + '/public/files/' + _filename + 'intro_tmp.avi';// Tmp file with intro converted in avi
             var tmpConvertedSize = 0, tmpWithIntroSize = 0;
 
+            var uploadToVimeo = function (filename) {
+                proccentReady = (proccentReady < 85) ? (proccentReady += 10) : proccentReady;
+                callback(null, null, proccentReady, null);
+                vimeo.upload(filename, function (err, msg) {
+                    if (err) return callback(err, null, null, socketId);
+
+                    // remove tmp files
+                    if (w_p !== 'no') {
+                        fs.unlinkSync(filePathWithIntro);
+                    }
+                    fs.unlinkSync(filePath);
+                    fs.unlinkSync(tmpFileAvi);
+                    fs.unlinkSync(tmpFileMpg);
+
+                    callback(null, msg, null, socketId);
+                });
+            }
             /** Concat videos and set watermark */
             var myExec = exec("cat " + _introMpg + " " + filePath + " > " + tmpFileMpg + ";ffmpeg -i " + tmpFileMpg + " " + tmpFileAvi + " -y",
                 function (error, stdout, stderr) {
                     if (error !== null) {
                         console.log('exec error: ' + error);
                     } else {
-                        console.log("Start add watermark!");
-                        var process = new ffmpegn(tmpFileAvi)
-                            .then(function (video) {
-                                video.fnAddWatermark(waterMark, '-strict -2 ' + filePathWithIntro, {
-                                    position: watermark_positions[w_p]
-                                }, function (error, file) {
-                                    if (!error) {
-                                        proccentReady = (proccentReady < 85) ? (proccentReady += 10) : proccentReady;
-                                        callback(null, null, proccentReady, null);
+                        if (w_p !== 'no') {
+                            // Use watermark
+                            console.log("Start add watermark!");
+                            var process = new ffmpegn(tmpFileAvi)
+                                .then(function (video) {
+                                    video.fnAddWatermark(waterMark, '-strict -2 ' + filePathWithIntro, {
+                                        position: watermark_positions[w_p]
+                                    }, function (error, file) {
+                                        if (!error) {
+                                            uploadToVimeo(filePathWithIntro);
 
-                                        vimeo.upload(filePathWithIntro, function (err, msg) {
-                                            if (err) return callback(err, null, null, socketId);
-
-                                            // remove tmp files
-                                            fs.unlinkSync(filePathWithIntro);
-                                            fs.unlinkSync(filePath);
-                                            fs.unlinkSync(tmpFileAvi);
-                                            fs.unlinkSync(tmpFileMpg);
-
-                                            callback(null, msg, null, socketId);
-                                        });
-                                    } else {
-                                        console.log('ERROR Add Water Mark: ' + error);
-                                        return callback(error, null, null, null);
-                                    }
+                                        } else {
+                                            console.log('ERROR Add Water Mark: ' + error);
+                                            return callback(error, null, null, null);
+                                        }
+                                    });
+                                },
+                                function (err) {
+                                    console.log('Error: ' + err);
+                                    return callback(err, null, null, null);
                                 });
-                            },
-                            function (err) {
-                                console.log('Error: ' + err);
-                                return callback(err, null, null, null);
-                            });
+                        } else {
+                            // Not use watermark
+                            uploadToVimeo(tmpFileAvi);
+                        }
                     }
                 });
             myExec.stderr.on('data', function (data) {
