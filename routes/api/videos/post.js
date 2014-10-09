@@ -8,10 +8,10 @@ var rootPath = process.cwd(),
     ffmpeg = require('fluent-ffmpeg'),
     spawn = require('child_process').spawn;
 var ffmpegn = require('ffmpeg');
+var exec = require('child_process').exec;
 
 // set resource 
 var waterMark = rootPath + '/public/resource/wm.png';
-var _introAvi = rootPath + '/public/resource/_intro.avi';
 var _introMpg = rootPath + '/public/resource/_intro.mpg';
 
 var post = function (req, res, w_p, callback) {
@@ -42,7 +42,7 @@ var post = function (req, res, w_p, callback) {
         avconv = spawn('ffmpeg', args); // If no avconc, use ffmpeg instead
         output = fs.createWriteStream(filePath);
 
-        var stats = fs.statSync(_introAvi);
+        var stats = fs.statSync(_introMpg);
 
         sizeIntro = (stats["size"] / 1024);
 
@@ -65,30 +65,18 @@ var post = function (req, res, w_p, callback) {
         avconv.stdout.pipe(output);
 
         avconv.on('exit', function () {
-
             var urlWithIntro = '/files/' + _filename + 'intro.avi',
                 filePathWithIntro = rootPath + '/public' + urlWithIntro;
-            var tmpFileMpg = rootPath + '/public/files/' + _filename + 'intro_tmp.mpg',
-                tmpFileAvi = rootPath + '/public/files/' + _filename + 'intro_tmp.avi';
+            var tmpFileMpg = rootPath + '/public/files/' + _filename + 'intro_tmp.mpg',// Tmp file with intro in mpg format
+                tmpFileAvi = rootPath + '/public/files/' + _filename + 'intro_tmp.avi';// Tmp file with intro converted in avi
+            var tmpConvertedSize = 0, tmpWithIntroSize = 0;
 
-//            proccentReady = (proccentReady < 80) ? (proccentReady + 10) : proccentReady;
-//            callback(null, null, proccentReady, null);
-//
-
-            /**
-             * Add intro
-             */
-
-
-            // http://nodejs.org/api.html#_child_processes
-            var stats = fs.statSync(_introAvi);
-            var exec = require('child_process').exec;
+            /** Concat videos and set watermark */
             var myExec = exec("cat " + _introMpg + " " + filePath + " > " + tmpFileMpg + ";ffmpeg -i " + tmpFileMpg + " " + tmpFileAvi + " -y",
                 function (error, stdout, stderr) {
                     if (error !== null) {
                         console.log('exec error: ' + error);
                     } else {
-                        console.log('Done join!!!');
                         console.log("Start add watermark!");
                         var process = new ffmpegn(tmpFileAvi)
                             .then(function (video) {
@@ -96,12 +84,13 @@ var post = function (req, res, w_p, callback) {
                                     position: watermark_positions[w_p]
                                 }, function (error, file) {
                                     if (!error) {
-                                        proccentReady = (proccentReady < 0) ? (proccentReady += 5) : proccentReady;
+                                        proccentReady = (proccentReady < 85) ? (proccentReady += 10) : proccentReady;
                                         callback(null, null, proccentReady, null);
 
                                         vimeo.upload(filePathWithIntro, function (err, msg) {
                                             if (err) return callback(err, null, null, socketId);
 
+                                            // remove tmp files
                                             fs.unlinkSync(filePathWithIntro);
                                             fs.unlinkSync(filePath);
                                             fs.unlinkSync(tmpFileAvi);
@@ -121,57 +110,25 @@ var post = function (req, res, w_p, callback) {
                             });
                     }
                 });
-            myExec.stderr.on('end', function () {
-                console.log("My std out end");
-            });
             myExec.stderr.on('data', function (data) {
-                console.log("My std out data"+ data);
-                var re = /size=(.*?)B/;
-                var newstr = data.match(re);
-                if (newstr){
-                    console.log("Converteb bytes: "+newstr[1]);
+
+                var pattern = /size=(.*?)kB/;
+                var convertedSize = data.match(pattern),
+                    progressPercent; // How much percents is converted in one step
+                if (convertedSize) {
+                    if (tmpWithIntroSize === 0) {
+                        // Set file with intro size if not set yet
+                        var stats = fs.statSync(tmpFileMpg);
+                        tmpWithIntroSize = (stats["size"] / 1000);
+                    }
+                    progressPercent = ((convertedSize[1] - tmpConvertedSize) / tmpWithIntroSize) * 65; // 65 - percents for exec operations
+                    tmpConvertedSize = convertedSize[1]; // Converted size on previous step
+
+                    proccentReady = (proccentReady < 80) ? (proccentReady += progressPercent) : proccentReady;
+                    callback(null, null, proccentReady, null);
+
                 }
-                    //to do: check percents ready
-//                proccentReady +=
-
-
-
-
-                proccentReady = (proccentReady < 80) ? (proccentReady += 0.2) : proccentReady;
-                callback(null, null, proccentReady, null);
             });
-            /***/
-
-
-
-//            var process = new ffmpegn(filePath)
-//                .then(function (video) {
-//                    video.fnAddWatermark(waterMark, '-strict -2 '+filePathWithIntro, {
-//                        position : watermark_positions[w_p]
-//                    }, function (error, file) {
-//                        if (!error)
-//                        {
-//                            proccentReady = (proccentReady < 90) ? (proccentReady + 8) : proccentReady;
-//                            callback(null, null, proccentReady, null);
-//
-//                            vimeo.upload(filePathWithIntro, function(err, msg) {
-//                                if (err) return callback(err,null,null,socketId);
-//
-//                                fs.unlinkSync(filePathWithIntro);
-//                                fs.unlinkSync(filePath);
-//
-//                                callback(null, msg, null,socketId);
-//                            });
-//                        } else {
-//                            console.log('ERROR Add Water Mark: ' + error);
-//                            return callback(error,null,null,null);
-//                        }
-//                    });
-//                },
-//                function (err) {
-//                    console.log('Error: ' + err);
-//                    return callback(err,null,null,null);
-//                });
         });
 
         avconv.stderr.on('data', function (data) {
